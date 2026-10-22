@@ -40,3 +40,4 @@ if __name__ == "__main__":
         rate = calc_trend(history_queue)
         
         print(f"存量 {stock:>3} 辆 | 状态 {status} | 近10分钟速率 {rate:+.2f} 辆/分")
+
