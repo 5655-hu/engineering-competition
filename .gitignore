@@ -1,0 +1,23 @@
+# Python虚拟环境
+.venv/
+venv/
+
+# Python缓存文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# C语言编译产物
+*.exe
+*.o
+*.out
+
+# 临时数据与日志
+*.tmp
+*.log
+data/*.csv
+
+# IDE配置
+.vscode/
+.idea/
