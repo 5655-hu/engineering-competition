@@ -21,3 +21,5 @@ data/*.csv
 # IDE配置
 .vscode/
 .idea/
+
+python_app/test_log.csv
