@@ -4,11 +4,8 @@ from sensor_layer import SimSensor
 from debounce import DebounceFilter, CONFIG
 from judge import judge_station
 
-DIST_TO_STOCK_COEF = 1.5
-DIST_ZERO_STOCK = 40
-
 def dist_to_stock(dist):
-    return max(0, int((DIST_ZERO_STOCK - dist) * DIST_TO_STOCK_COEF))
+    return max(0, int((CONFIG["DIST_ZERO_STOCK"] - dist) * CONFIG["DIST_TO_STOCK_COEF"]))
 
 def main():
     sensor = SimSensor()

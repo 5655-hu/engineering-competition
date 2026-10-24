@@ -4,6 +4,10 @@ CONFIG = {
     "PROD_DEBOUNCE": 3,
     "BLIND_MAX": 2,
     "RANGE_MAX": 400,
+    "DIST_ZERO_STOCK": 40,
+    "DIST_TO_STOCK_COEF": 1.5,
+    "SERIAL_PORT": "COM3",
+    "SERIAL_BAUD": 9600,
 }
 
 class DebounceFilter:
