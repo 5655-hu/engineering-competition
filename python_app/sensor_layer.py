@@ -2,19 +2,13 @@ import random
 import serial
 
 class SimSensor:
-    def __init__(self):
-        self.weights = [0.5, 0.3, 0.1, 0.1]
-
     def read(self):
-        scenario = random.choices(["normal", "parked", "blind", "out_range"], weights=self.weights)[0]
-        if scenario == "normal":
-            return round(random.uniform(25, 45), 1)
-        elif scenario == "parked":
-            return round(random.uniform(5, 18), 1)
-        elif scenario == "blind":
-            return round(random.uniform(0, 1.9), 1)
+        if random.random() < 0.15:
+            # 15%概率生成盲区/超量程数据，测试容错
+            return round(random.choice([0.5, 420]), 1)
         else:
-            return round(random.uniform(401, 500), 1)
+            # 正常范围：10~50cm，贴近真实沙盘场景
+            return round(random.uniform(10, 50), 1)
 
 class SerialSensor:
     def __init__(self, port="COM3", baud=9600):
