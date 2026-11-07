@@ -162,48 +162,52 @@ else:
 # ================= 6. 调度方案展示区 =================
 st.subheader("🚚 智能调度方案建议")
 if status_text == "缺车":
-    # 目标：恢复到该站点自己的基准车辆数（base_stock）
-    target_stock = STATIONS[station_name]["base_stock"]
-    need_cars = target_stock - current_stock
-    
-    donation_plan = []
-    total_got = 0
-    
-    # 遍历其他所有站点
-    for name, info in STATIONS.items():
-        if name == station_name:
-            continue # 跳过自己
-            
-        # 模拟获取其他站点的实时库存
-        other_stock = info["base_stock"] + random.randint(-5, 15)
-        
-        # 【核心】每个站点的专属生命线 = 它自己的 base_stock
-        safe_line = info["base_stock"] 
-        
-        # 富余量：只有高出它自己底线的部分，才能拿出来支援
-        available = other_stock - safe_line
-        
-        if available > 0:
-            # 按需提取，不能超过缺口
-            take_amount = min(available, need_cars - total_got)
-            take_amount = int(take_amount)
-            
-            if take_amount > 0:
-                donation_plan.append(f"**{name}**({take_amount}辆)")
-                total_got += take_amount
-        
-        if total_got >= need_cars:
-            break
-            
-    # 生成建议
-    if total_got >= need_cars:
-        plan_str = " + ".join(donation_plan)
-        st.info(f"💡 调度方案：启动多点联合支援！需从 {plan_str} 调入，共计 **{need_cars} 辆**。（系统已测算，各支援站点调出后，依然绝对保有自身原有的基准库存，不影响正常使用）")
-    elif total_got > 0:
-        plan_str = " + ".join(donation_plan)
-        st.warning(f"💡 调度方案：周边站点余量有限。需从 {plan_str} 先调入 **{total_got} 辆**。剩余缺口 **{need_cars - total_got} 辆** 需联系中心仓库派车！")
+    # 【核心优化】如果是雨雪恶劣天气，降低调度优先级
+    if "雨" in weather or "雪" in weather:
+        st.warning(f"💡 调度方案：当前为 {weather}，骑行需求大幅降低。虽然站点缺车，但系统判定无需跨站紧急调拨，建议暂缓调度并做好车辆防护。")
     else:
-        st.error("💡 调度方案：周边所有站点均处于自身基准线或以下，无法跨站调拨。请直接联系中心仓库紧急派车！")
+        # 晴天或阴天，执行正常的联合支援算法
+        target_stock = STATIONS[station_name]["base_stock"]
+        need_cars = target_stock - current_stock
+        
+        donation_plan = []
+        total_got = 0
+        
+        # 遍历其他所有站点
+        for name, info in STATIONS.items():
+            if name == station_name:
+                continue # 跳过自己
+                
+            # 模拟获取其他站点的实时库存
+            other_stock = info["base_stock"] + random.randint(-5, 15)
+            
+            # 【核心】每个站点的专属生命线 = 它自己的 base_stock
+            safe_line = info["base_stock"] 
+            
+            # 富余量：只有高出它自己底线的部分，才能拿出来支援
+            available = other_stock - safe_line
+            
+            if available > 0:
+                # 按需提取，不能超过缺口
+                take_amount = min(available, need_cars - total_got)
+                take_amount = int(take_amount)
+                
+                if take_amount > 0:
+                    donation_plan.append(f"**{name}**({take_amount}辆)")
+                    total_got += take_amount
+            
+            if total_got >= need_cars:
+                break
+                
+        # 生成建议
+        if total_got >= need_cars:
+            plan_str = " + ".join(donation_plan)
+            st.info(f"💡 调度方案：启动多点联合支援！需从 {plan_str} 调入，共计 **{need_cars} 辆**。（系统已测算，各支援站点调出后，依然绝对保有自身原有的基准库存，不影响正常使用）")
+        elif total_got > 0:
+            plan_str = " + ".join(donation_plan)
+            st.warning(f"💡 调度方案：周边站点余量有限。需从 {plan_str} 先调入 **{total_got} 辆**。剩余缺口 **{need_cars - total_got} 辆** 需联系中心仓库派车！")
+        else:
+            st.error("💡 调度方案：周边所有站点均处于自身基准线或以下，无法跨站调拨。请直接联系中心仓库紧急派车！")
         
 elif status_text == "堆积":
     overflow_cars = current_stock - 35
@@ -229,70 +233,44 @@ times = [(now - datetime.timedelta(minutes=i)).strftime('%H:%M') for i in range(
 if current_stock == -1:
     y_data = [np.nan] * 10  # 异常状态折线断开
 else:
-    y_data = [current_stock + np.random.randint(-6, 7) for _ in range(9)]
+    y_data = [max(0, current_stock + np.random.randint(-6, 7)) for _ in range(9)]
     y_data.append(current_stock)
 
 chart_data = pd.DataFrame({'车辆存量': y_data}, index=times)
 st.line_chart(chart_data, color="#29b5e8")
 
-import pydeck as pdk
+# ================= 8. 多站点高德地图展示 =================
+import streamlit.components.v1 as components
+import json
 
-map_data = []
-for name, info in STATIONS.items():
-    stock_val = current_stock if name == station_name else info["base_stock"]
-    map_data.append({
-        "站点": name,
-        "lat": info["lat"],
-        "lon": info["lon"],
-        "车辆数": stock_val if stock_val != -1 else 0,
-    })
+st.markdown("---")
+st.subheader("🗺️ 多站点全局分布地图")
 
-map_df = pd.DataFrame(map_data)
-
-# 1. 3D 柱状图图层
-column_layer = pdk.Layer(
-    "ColumnLayer",
-    map_df,
-    get_position=["lon", "lat"],
-    get_elevation="车辆数",
-    elevation_scale=1.5,      
-    radius=10,              
-    get_fill_color=[41, 181, 232, 200], # 科技蓝
-    pickable=True,
-    auto_highlight=True,
-)
-
-view_state = pdk.ViewState(
-    latitude=20.0070, 
-    longitude=110.4680,
-    zoom=16.5,        
-    pitch=50,       
-    bearing=0
-)
-
-# 渲染地图（使用 PyDeck 官方内置底图，绝对不会白屏）
-st.pydeck_chart(pdk.Deck(
-    layers=[column_layer],
-    initial_view_state=view_state,
-    # 使用官方自带的暗黑底图，不用受国内网络限制
-    map_style=pdk.map_styles.CARTO_DARK,
-    # 鼠标悬浮在柱子上，完美显示名字和数量
-    tooltip={"text": "{站点}\n车辆数: {车辆数}辆"} 
-))
-
-# 2. 地图下方的完美卡片
-st.markdown("##### 📍 各站点实时状态 (鼠标悬浮地图柱子可看详情)")
-col1, col2, col3 = st.columns(3)
-for i, (name, info) in enumerate(STATIONS.items()):
-    stock_val = current_stock if name == station_name else info["base_stock"]
-    display_val = f"{stock_val} 辆" if stock_val != -1 else "异常"
+try:
+    with open("map.html", "r", encoding="utf-8") as f:
+        html_data = f.read()
     
-    if i == 0:
-        col1.info(f"**{name}**\n\n当前：{display_val}")
-    elif i == 1:
-        col2.info(f"**{name}**\n\n当前：{display_val}")
-    else:
-        col3.info(f"**{name}**\n\n当前：{display_val}")
+    map_data_list = []
+    for name, info in STATIONS.items():
+        stock_val = current_stock if name == station_name else info["base_stock"]
+        display_val = stock_val if stock_val != -1 else "异常"
+        map_data_list.append({
+            "name": name,
+            "position": [info["lon"], info["lat"]],
+            "bikeNum": display_val
+        })
+    
+    # 保证中文直接输出，不转义成 \uXXXX
+    data_json = json.dumps(map_data_list, ensure_ascii=False)
+    
+    # 找到 html 里的空数组或者默认数据，直接精准替换！
+    # 只要你的 map.html 里写了 var stationList = []; 就能完美替换
+    html_data = html_data.replace("var stationList = [];", f"var stationList = {data_json};")
+
+    components.html(html_data, height=500)
+    
+except FileNotFoundError:
+    st.error("⚠️ 找不到 map.html 文件，请确认它和 app.py 是否在同一个文件夹里！")
 
 # ================= 11. 导出调度报表 =================
 st.markdown("---")
