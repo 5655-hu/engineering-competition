@@ -23,3 +23,32 @@ data/*.csv
 .idea/
 
 python_app/test_log.csv
+# 虚拟环境
+.venv/
+venv/
+
+# Python 运行缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 运行日志与临时数据
+*.csv
+*.log
+
+# 压缩包
+*.zip
+*.rar
+
+# 编辑器配置
+.vscode/
+.idea/
+
+# 办公文档
+*.docx
+*.xlsx
+*.pptx
+
+# 系统临时文件
+Thumbs.db
+.DS_Store
