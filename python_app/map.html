@@ -30,11 +30,7 @@
         
         // 【重点】你的坐标已经原封不动地写在这里了！
         // Python 启动时，会自动替换掉这里面的数字，实现动态刷新。
-        var stationList = [
-            { name: "食堂站点", position: [110.515, 19.985], bikeNum: 45 },
-            { name: "教学楼站点", position: [110.510, 19.981], bikeNum: 30 },
-            { name: "宿舍站点", position: [110.513, 19.986], bikeNum: 20 }
-        ]; 
+        var stationList = [];
 
         stationList.forEach(function(item) {
             var markerContent = `
@@ -47,18 +43,6 @@
                 position: item.position, content: markerContent, offset: new AMap.Pixel(-40, -40), map: map
             });
         });
-
-        // 防闪烁数字跳动逻辑
-        setInterval(function() {
-            stationList.forEach(function(item) {
-                if (typeof item.bikeNum === 'number') {
-                    var change = Math.floor(Math.random() * 5) - 2;
-                    item.bikeNum = Math.max(0, item.bikeNum + change);
-                    var el = document.querySelector('.bike-num[data-name="' + item.name + '"]');
-                    if (el) el.innerText = item.bikeNum + ' 辆';
-                }
-            });
-        }, 2000);
     </script>
 </body>
 </html>
